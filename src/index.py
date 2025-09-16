@@ -7,11 +7,23 @@ import asyncio
 
 
 class My_search:
+    '''Класс для работы с Elasticsearch: создание индексов и работа с ними:
+    вставка, удаление, поиск.'''
     def __init__(self, host: str):
+        '''Функция инициализации. Подключаемся к
+        Elasticsearch и создаём класс обработчик текста.
+
+        Args:
+            host: http ссылка на Elasticsearch.'''
         self.es = Elasticsearch(host)
         self.analyzer = Prepare_Text()
 
     def create_index(self, index_name: str, index_settings) -> None:
+        '''Создание нового индекса в Elasticsearch.
+
+        Args:
+            index_name: наименование индекса.
+            index_settings: настройки индекса по Elasticsearch нотации.'''
         if not self.es.indices.exists(index=index_name):
             self.es.indices.create(index=index_name, body=index_settings)
         else:
@@ -20,20 +32,46 @@ class My_search:
             )
 
     def create_indices(self, indices_names: list[str], indices_settings) -> None:
+        '''Создание нескольких индексов. Просто цикличное применение
+        функции по созданию одного индекса.
+
+        Args:
+            indices_names: список наименований индексов.
+            indices_settings: список настроек индексов (для каждого индекса
+            один набор настроек).'''
         for index_name, index_settings in zip(indices_names, indices_settings):
             self.create_index(index_name, index_settings)
 
     def delete_index(self, index_name) -> None:
+        '''Удаление индекса из Elasticsearch.
+
+        Args:
+            index_name: наименование индекса, который нужно удалить.'''
         if self.es.indices.exists(index=index_name):
             self.es.indices.delete(index=index_name)
         else:
             print("Такого индекса не существует!")
 
     def delete_indices(self, indices_names: list[str]) -> None:
+        '''Удаление индексов. Просто цикличное применение функции
+        по удалению одного индекса.
+
+        Args:
+            indices_names: список наименований индексов, которые
+            нужно удалить.'''
         for index_name in indices_names:
             self.delete_index(index_name)
 
-    def add_doc(self, doc: dict[str, str], indices_names: str, processing_fields: list[str]):
+    def add_doc(self, doc: dict[str, str], indices_names: list[str], processing_fields: list[str]) -> None:
+        '''Добавление одного документа в индексы Elasticsearch.
+
+        Args:
+            doc: словарь (поле, значение), которые представляет сам документ,
+            важно, чтобы соответствующие поля были в индексе.
+            indices_names: наименования индексов, в которые нужно добавить
+            документ.
+            processing_fields: наименование полей документа, которые нужно
+            подготовить перед вставкой в индекс.'''
         custom_analyzer_doc = {}
         for field in doc:
             for field in processing_fields:
@@ -53,13 +91,28 @@ class My_search:
         self, path_excel_docs: str, indices_names: list[str], fields: list[str],
         processing_fields: list[str], num_of_docs: int
     ) -> None:
+        '''Добавления массива документов, представленных в excel формате.
+
+        Args:
+            path_excel_docs: путь к excel файлу с документами.
+            indices_names: наименования индексов, в которые нужно загрузить
+            документы.
+            fields: поля документов (столбы в excel таблице), которые нужно
+            загружать.
+            processing_fields: поля документов, которые необходимо подготовить
+            перед загрузкой.
+            num_of_docs: количество документов (строк), которые необходимо загрузить.'''
         docs = self.analyzer.prepare_docs(
             path=path_excel_docs,
             columns=fields,
             processing_columns=processing_fields,
             num_of_docs=num_of_docs
         )
-        true_docs = self.analyzer.light_prepare_docs(path=path_excel_docs, columns=fields, num_of_docs=num_of_docs)
+        true_docs = self.analyzer.light_prepare_docs(
+            path=path_excel_docs,
+            columns=fields,
+            num_of_docs=num_of_docs
+        )
         true_docs = true_docs.fillna("")
         true_docs = true_docs.astype(str)
 
@@ -77,7 +130,13 @@ class My_search:
                 else:
                     self.es.index(index=index_name, document=custom_analyzer_doc)
 
-    def search_one_field_and_index(self, query: str, field: str, index_name: str, fuzziness: float = "AUTO", num_of_responses: int = 10):
+    def search_one_field_and_index(
+            self,
+            query: str,
+            field: str,
+            index_name: str,
+            fuzziness: float = "AUTO",
+            num_of_responses: int = 10):
         body = {
             "query": {
                 "match": {

@@ -6,6 +6,7 @@ import webbrowser
 
 
 class SearchGUI:
+    '''Класс графического интерфейса приложения.'''
     def __init__(self, master, search: My_search, indices_names: List[str]):
         self.master = master
         master.title("ElasticSearch Results")
@@ -162,9 +163,6 @@ class SearchGUI:
             font=('Arial', 9)
         )
         content_label.pack(fill='x', padx=5, pady=(5, 0))
-
-        # Ссылка (3.1 - теперь снизу)
-        # 3.3 Удален разделитель
 
         # 3.2 Выравнивание по левому краю
         link_btn = tk.Button(
