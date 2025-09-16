@@ -130,115 +130,23 @@ class My_search:
                 else:
                     self.es.index(index=index_name, document=custom_analyzer_doc)
 
-    def search_one_field_and_index(
-            self,
-            query: str,
-            field: str,
-            index_name: str,
-            fuzziness: float = "AUTO",
-            num_of_responses: int = 10):
-        body = {
-            "query": {
-                "match": {
-                    field: {
-                        "query": self.analyzer.prepare_text(query),
-                        "fuzziness": fuzziness
-                    }
-                }
-            },
-            "size": num_of_responses
-        }
+    def search_many_fields_many_indices(
+        self,
+        query: str,
+        fields: list[str],
+        indices_names: list[str],
+        fuzziness: float = "AUTO",
+        num_of_responses: int = 10
+    ) -> None:
+        '''Поиск по нескольким (одному) полям и нескольким (одному) индексам.
 
-        results = self.es.search(index=index_name, body=body)
-
-        print(f"Найдено документов: {results['hits']['total']['value']}")
-        for hit in results["hits"]["hits"]:
-            doc = hit["_source"]
-            print("___________________________________________________")
-            print("___________________________________________________")
-            print(f"Index: {hit['_index']}, ID: {hit['_id']}, Score: {hit['_score']}")
-            try:
-                print(f"title: {doc["true_title"]}")
-            except:
-                print(f"title: {doc["title"]}")
-            try:
-                print(f"summary: {doc["true_summary"]}")
-            except:
-                print(f"title: {doc["summary"]}")
-            try:
-                print(f"content: {doc["true_content"]}")
-            except:
-                print(f"title: {doc["content"]}")
-
-    def search_one_and_many_indices(self, query: str, field: str, indices_names: list[str], fuzziness: float = "AUTO", num_of_responses: int=10):
-        body = {
-            "query": {
-                "match": {
-                    field: {
-                        "query": self.analyzer.prepare_text(query),
-                        "fuzziness": fuzziness
-                    }
-                }
-            },
-            "size": num_of_responses
-        }
-
-        results = self.es.search(index=indices_names, body=body)
-
-        print(f"Найдено документов: {results['hits']['total']['value']}")
-        for hit in results["hits"]["hits"]:
-            doc = hit["_source"]
-            print("___________________________________________________")
-            print("___________________________________________________")
-            print(f"Index: {hit['_index']}, ID: {hit['_id']}, Score: {hit['_score']}")
-            try:
-                print(f"title: {doc["true_title"]}")
-            except:
-                print(f"title: {doc["title"]}")
-            try:
-                print(f"summary: {doc["true_summary"]}")
-            except:
-                print(f"title: {doc["summary"]}")
-            try:
-                print(f"content: {doc["true_content"]}")
-            except:
-                print(f"title: {doc["content"]}")
-
-    def search_many_fields_one_index(self, query: str, fields: list[str], index_name: str, fuzziness: float = "AUTO", num_of_responses: int = 10):
-        body = {
-            "query": {
-                "multi_match": {
-                    "query": self.analyzer.prepare_text(query),
-                    "fields": fields,
-                    "fuzziness": fuzziness,
-                    "type": "best_fields"
-                }
-            },
-            "size": num_of_responses
-        }
-
-        results = self.es.search(index=index_name, body=body)
-
-        print(f"Найдено документов: {results['hits']['total']['value']}")
-        for hit in results["hits"]["hits"]:
-            doc = hit["_source"]
-            print("___________________________________________________")
-            print("___________________________________________________")
-            print(f"Index: {hit['_index']}, ID: {hit['_id']}, Score: {hit['_score']}")
-            try:
-                print(f"title: {doc["true_title"]}")
-            except:
-                print(f"title: {doc["title"]}")
-            try:
-                print(f"summary: {doc["true_summary"]}")
-            except:
-                print(f"title: {doc["summary"]}")
-            try:
-                print(f"content: {doc["true_content"]}")
-            except:
-                print(f"title: {doc["content"]}")
-
-    def search_many_fields_many_indices(self, query: str, fields: list[str], indices_names: list[str], fuzziness: float = "AUTO", num_of_responses: int = 10):
+        Args:
+            query: запрос, по которому нужно найти информацию.
+            fields: наименования полей, по которым нужно производить поиск.
+            indices_names: наименования индексов, в которых необходимо производить поиск.
+            fuzziness: количество ошибок, которое можно сделать при сопоставлении слов.
+            num_of_responses: количество ответов, которые нужно вывести в качестве ответа
+            на запрос.'''
         body = {
             "query": {
                 "multi_match": {
@@ -272,7 +180,20 @@ class My_search:
             except:
                 print(f"title: {doc["content"]}")
 
-    def __get_answer__(self, query: str, context_texts: list[str]):
+    def __get_answer__(
+        self,
+        query: str,
+        context_texts: list[str]
+    ) -> str:
+        '''Формирование краткого ответа по запросу на основе поисковой выдачи.
+
+        Args:
+            query: запрос, на который нужно сформировать ответ.
+            context_texts: поисковая выдача.
+
+        Returns:
+            str: строка, в которой содержится ответ на вопрос пользователя,
+            сформированный при помощи YandexGpt.'''
         prompt_get_answer = "Ты внимательно анализируешь предоставленные документы и точно отвечаешь на вопросы по ним. Если нужной информации нет, то в качестве ответа напиши только число 0 и ничего больше."
         prompt_compare_answers = "На каждой строке тебе дан один вариант ответа, ты внимательно анализируешь их на соответствие вопросу и возвращаешь лучший из них, только его."
 
@@ -293,7 +214,25 @@ class My_search:
 
         return "0"
 
-    def search_many_fields_with_qa(self, query: str, fields: list[str], indices_names: list[str], fuzziness: float = "AUTO", num_of_responses: int = 10):
+    def search_many_fields_with_qa(
+        self,
+        query: str,
+        fields: list[str],
+        indices_names: list[str],
+        fuzziness: float = "AUTO",
+        num_of_responses: int = 10
+    ) -> None:
+        '''Поиск по нескольким (одному) полям и нескольким (одному) индексам.
+        + к ответу добавляется ответ YandexGpt, сформированный на основе
+        полученной поисковой выдачи.
+
+        Args:
+            query: запрос, по которому нужно найти информацию.
+            fields: наименования полей, по которым нужно производить поиск.
+            indices_names: наименования индексов, в которых необходимо производить поиск.
+            fuzziness: количество ошибок, которое можно сделать при сопоставлении слов.
+            num_of_responses: количество ответов, которые нужно вывести в качестве ответа
+            на запрос.'''
         body = {
             "query": {
                 "multi_match": {
@@ -341,7 +280,14 @@ class My_search:
             except:
                 print(f"title: {doc["content"]}")
 
-    def search_for_gui(self, query: str, fields: list[str], indices_names: list[str], fuzziness: float = "AUTO", num_of_responses: int = 10) -> (str, list[(str, str)]):
+    def search_for_gui(
+        self,
+        query: str,
+        fields: list[str],
+        indices_names: list[str],
+        fuzziness: float = "AUTO",
+        num_of_responses: int = 10
+    ) -> (str, list[(str, str)]):
         body = {
             "query": {
                 "multi_match": {
