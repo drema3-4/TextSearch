@@ -1,13 +1,21 @@
 import tkinter as tk
 from tkinter import ttk
 from typing import List, Tuple
-from src.index import My_search  # Убедитесь, что модуль корректно импортируется
+from src.index import My_search
 import webbrowser
 
 
 class SearchGUI:
     '''Класс графического интерфейса приложения.'''
     def __init__(self, master, search: My_search, indices_names: List[str]):
+        '''Функция инициализации.
+
+        Args:
+            master: окно, в котором будет размещаться gui.
+            search: экземпляр класса My_search для взаимодействия
+            с Elasticsearch.
+            indices_names: наименования индексов, которые присутствуют в
+            Elasticsearch.'''
         self.master = master
         master.title("ElasticSearch Results")
         master.configure(bg='white')
@@ -34,12 +42,12 @@ class SearchGUI:
         self.results_visible = False
 
     def create_main_container(self):
-        """Создает основной контейнер для контента"""
+        '''Создает основной контейнер для контента'''
         self.main_frame = tk.Frame(self.master, bg='white')
         self.main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     def create_search_frame(self):
-        """Создает панель поиска"""
+        '''Создает панель поиска'''
         search_frame = tk.Frame(self.master, bg='white')
         search_frame.pack(fill='x', padx=10, pady=10)
 
@@ -56,7 +64,7 @@ class SearchGUI:
         search_btn.pack(side='left')
 
     def perform_search(self):
-        """Обработчик поискового запроса"""
+        '''Обработчик поискового запроса'''
         try:
             self.show_loading()
             query = self.entry.get()
@@ -80,7 +88,7 @@ class SearchGUI:
             self.hide_loading()
 
     def create_quick_answer_frame(self):
-        """Создает блок с быстрым ответом"""
+        '''Создает блок с быстрым ответом'''
         self.answer_frame = tk.Frame(
             self.main_frame,
             bd=2,
@@ -113,7 +121,7 @@ class SearchGUI:
         self.toggle_visibility("answer", False)
 
     def create_results_frame(self):
-        """Создает блок с результатами поиска"""
+        '''Создает блок с результатами поиска'''
         self.results_container = tk.Frame(self.main_frame, bg='white')
 
         # Настройка прокрутки
@@ -143,22 +151,22 @@ class SearchGUI:
         scrollbar.pack(side='right', fill='y')
 
     def create_document_block(self, parent, link: str, content: str):
-        """Создает блок документа"""
+        '''Создает блок документа'''
         doc_frame = tk.Frame(
             parent,
             bd=1,
             relief='solid',
             bg='white'
         )
-        doc_frame.pack(fill='x', pady=5, padx=2)  # Увеличен вертикальный отступ между блоками
+        doc_frame.pack(fill='x', pady=5, padx=2)
 
-        # Содержание документа (3.1 - теперь сверху)
+        # Содержание документа
         content_label = tk.Label(
             doc_frame,
             text=content,
             anchor='w',
             bg='white',
-            wraplength=1200,  # Увеличен для ширины 1280
+            wraplength=1200,
             justify='left',
             font=('Arial', 9)
         )
@@ -180,7 +188,7 @@ class SearchGUI:
         link_btn.pack(fill='x', padx=5, pady=(0, 5), anchor='w')
 
     def update_answer(self, quick_answer: str):
-        """Обновляет блок с быстрым ответом"""
+        '''Обновляет блок с быстрым ответом'''
         self.answer_text.configure(state='normal')
         self.answer_text.delete('1.0', 'end')
 
@@ -193,7 +201,7 @@ class SearchGUI:
         self.answer_text.configure(state='disabled')
 
     def update_documents(self, documents: List[Tuple[str, str]]):
-        """Обновляет результаты поиска"""
+        '''Обновляет результаты поиска'''
         # Очистка старых результатов
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
@@ -216,7 +224,7 @@ class SearchGUI:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def toggle_visibility(self, element: str, show: bool):
-        """Управляет видимостью элементов"""
+        '''Управляет видимостью элементов'''
         if element == "answer":
             if show:
                 # Теперь фрейм всегда физически упакован, управляем только видимостью
@@ -234,7 +242,7 @@ class SearchGUI:
             self.results_visible = show
 
     def show_loading(self):
-        """Показывает индикатор загрузки"""
+        '''Показывает индикатор загрузки'''
         self.toggle_visibility("answer", False)
         self.toggle_visibility("results", False)
 
@@ -248,13 +256,13 @@ class SearchGUI:
         self.master.update()
 
     def hide_loading(self):
-        """Скрывает индикатор загрузки"""
+        '''Скрывает индикатор загрузки'''
         if self.loading_label:
             self.loading_label.pack_forget()
             self.master.update()
 
     def show_error(self, message: str):
-        """Показывает сообщение об ошибке"""
+        '''Показывает сообщение об ошибке'''
         error_frame = tk.Frame(self.main_frame, bg='#ffebee')
         tk.Label(
             error_frame,
@@ -267,5 +275,5 @@ class SearchGUI:
         self.master.after(5000, error_frame.pack_forget)
 
     def on_close(self):
-        """Обработчик закрытия окна"""
+        '''Обработчик закрытия окна'''
         self.master.destroy()
