@@ -4,7 +4,8 @@ import pandas as pd
 import re
 from src.short_answer import get_short_answer
 import asyncio
-
+from sentence_transformers import SentenceTransformer
+from transformers import pipeline
 
 class My_search:
     '''Класс для работы с Elasticsearch: создание индексов и работа с ними:
@@ -17,6 +18,7 @@ class My_search:
             host: http ссылка на Elasticsearch.'''
         self.es = Elasticsearch(host)
         self.analyzer = Prepare_Text()
+        self.maker_embedding = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
     def create_index(self, index_name: str, index_settings) -> None:
         '''Создание нового индекса в Elasticsearch.
@@ -81,6 +83,9 @@ class My_search:
                 custom_analyzer_doc[field] = self.analyzer.light_prepare_text(doc[field])
                 custom_analyzer_doc[f"true_{field}"] = self.analyzer.light_prepare_text(doc[field])
 
+        doc["content_embedding"] = self.maker_embedding.encode(doc["content"]).tolist()
+        custom_analyzer_doc["content_embedding"] = self.maker_embedding.encode(custom_analyzer_doc["content_embedding"]).tolist()
+
         for index_name in indices_names:
             if re.search("standart", index_name):
                 self.es.index(index=index_name, document=doc)
@@ -129,56 +134,56 @@ class My_search:
                     self.es.index(index=index_name, document=doc)
                 else:
                     self.es.index(index=index_name, document=custom_analyzer_doc)
-
-    def search_many_fields_many_indices(
-        self,
-        query: str,
-        fields: list[str],
-        indices_names: list[str],
-        fuzziness: float = "AUTO",
-        num_of_responses: int = 10
-    ) -> None:
-        '''Поиск по нескольким (одному) полям и нескольким (одному) индексам.
-
-        Args:
-            query: запрос, по которому нужно найти информацию.
-            fields: наименования полей, по которым нужно производить поиск.
-            indices_names: наименования индексов, в которых необходимо производить поиск.
-            fuzziness: количество ошибок, которое можно сделать при сопоставлении слов.
-            num_of_responses: количество ответов, которые нужно вывести в качестве ответа
-            на запрос.'''
-        body = {
-            "query": {
-                "multi_match": {
-                    "query": self.analyzer.prepare_text(query),
-                    "fields": fields,
-                    "fuzziness": fuzziness,
-                    "type": "best_fields"
-                }
-            },
-            "size": num_of_responses
-        }
-
-        results = self.es.search(index=indices_names, body=body)
-
-        print(f"Найдено документов: {results['hits']['total']['value']}")
-        for hit in results["hits"]["hits"]:
-            doc = hit["_source"]
-            print("___________________________________________________")
-            print("___________________________________________________")
-            print(f"Index: {hit['_index']}, ID: {hit['_id']}, Score: {hit['_score']}")
-            try:
-                print(f"title: {doc["true_title"]}")
-            except:
-                print(f"title: {doc["title"]}")
-            try:
-                print(f"summary: {doc["true_summary"]}")
-            except:
-                print(f"title: {doc["summary"]}")
-            try:
-                print(f"content: {doc["true_content"]}")
-            except:
-                print(f"title: {doc["content"]}")
+## Устаревшая функция
+    # def search_many_fields_many_indices(
+    #     self,
+    #     query: str,
+    #     fields: list[str],
+    #     indices_names: list[str],
+    #     fuzziness: float = "AUTO",
+    #     num_of_responses: int = 10
+    # ) -> None:
+    #     '''Поиск по нескольким (одному) полям и нескольким (одному) индексам.
+    #
+    #     Args:
+    #         query: запрос, по которому нужно найти информацию.
+    #         fields: наименования полей, по которым нужно производить поиск.
+    #         indices_names: наименования индексов, в которых необходимо производить поиск.
+    #         fuzziness: количество ошибок, которое можно сделать при сопоставлении слов.
+    #         num_of_responses: количество ответов, которые нужно вывести в качестве ответа
+    #         на запрос.'''
+    #     body = {
+    #         "query": {
+    #             "multi_match": {
+    #                 "query": self.analyzer.prepare_text(query),
+    #                 "fields": fields,
+    #                 "fuzziness": fuzziness,
+    #                 "type": "best_fields"
+    #             }
+    #         },
+    #         "size": num_of_responses
+    #     }
+    #
+    #     results = self.es.search(index=indices_names, body=body)
+    #
+    #     print(f"Найдено документов: {results['hits']['total']['value']}")
+    #     for hit in results["hits"]["hits"]:
+    #         doc = hit["_source"]
+    #         print("___________________________________________________")
+    #         print("___________________________________________________")
+    #         print(f"Index: {hit['_index']}, ID: {hit['_id']}, Score: {hit['_score']}")
+    #         try:
+    #             print(f"title: {doc["true_title"]}")
+    #         except:
+    #             print(f"title: {doc["title"]}")
+    #         try:
+    #             print(f"summary: {doc["true_summary"]}")
+    #         except:
+    #             print(f"title: {doc["summary"]}")
+    #         try:
+    #             print(f"content: {doc["true_content"]}")
+    #         except:
+    #             print(f"title: {doc["content"]}")
 
     def __get_answer__(
         self,
@@ -214,17 +219,82 @@ class My_search:
 
         return "0"
 
-    def search_many_fields_with_qa(
-        self,
-        query: str,
-        fields: list[str],
-        indices_names: list[str],
-        fuzziness: float = "AUTO",
-        num_of_responses: int = 10
-    ) -> None:
-        '''Поиск по нескольким (одному) полям и нескольким (одному) индексам.
-        + к ответу добавляется ответ YandexGpt, сформированный на основе
-        полученной поисковой выдачи.
+## Устаревшая функция
+    # def search_many_fields_with_qa(
+    #     self,
+    #     query: str,
+    #     fields: list[str],
+    #     indices_names: list[str],
+    #     fuzziness: float = "AUTO",
+    #     num_of_responses: int = 10
+    # ) -> None:
+    #     '''Поиск по нескольким (одному) полям и нескольким (одному) индексам.
+    #     + к ответу добавляется ответ YandexGpt, сформированный на основе
+    #     полученной поисковой выдачи.
+    #
+    #     Args:
+    #         query: запрос, по которому нужно найти информацию.
+    #         fields: наименования полей, по которым нужно производить поиск.
+    #         indices_names: наименования индексов, в которых необходимо производить поиск.
+    #         fuzziness: количество ошибок, которое можно сделать при сопоставлении слов.
+    #         num_of_responses: количество ответов, которые нужно вывести в качестве ответа
+    #         на запрос.'''
+    #     body = {
+    #         "query": {
+    #             "multi_match": {
+    #                 "query": self.analyzer.prepare_text(query),
+    #                 "fields": fields,
+    #                 "fuzziness": fuzziness,
+    #                 "type": "best_fields"
+    #             }
+    #         },
+    #         "size": num_of_responses
+    #     }
+    #
+    #     results = self.es.search(index=indices_names, body=body)
+    #
+    #     contexts = []
+    #     for hit in results['hits']['hits']:
+    #         context = ""
+    #         try:
+    #             context = hit["_source"]["true_content"]
+    #         except:
+    #             context = hit["_source"]["content"]
+    #         contexts.append(context)
+    #
+    #     # print(f"Найдено документов: {results['hits']['total']['value']}")
+    #     print("___________________________________________________")
+    #     print("___________________________________________________")
+    #     print("Answer:")
+    #     print(self.__get_answer__(query=query, context_texts=contexts))
+    #     print("___________________________________________________")
+    #     for hit in results["hits"]["hits"]:
+    #         doc = hit["_source"]
+    #         print("___________________________________________________")
+    #         print("___________________________________________________")
+    #         print(f"Index: {hit['_index']}, ID: {hit['_id']}, Score: {hit['_score']}")
+    #         try:
+    #             print(f"title: {doc["true_title"]}")
+    #         except:
+    #             print(f"title: {doc["title"]}")
+    #         try:
+    #             print(f"summary: {doc["true_summary"]}")
+    #         except:
+    #             print(f"title: {doc["summary"]}")
+    #         try:
+    #             print(f"content: {doc["true_content"]}")
+    #         except:
+    #             print(f"title: {doc["content"]}")
+
+    def search_for_gui(
+            self,
+            query: str,
+            fields: list[str],
+            indices_names: list[str],
+            fuzziness: float = "AUTO",
+            num_of_responses: int = 10
+    ) -> (str, list[(str, str)]):
+        '''Функция формирования ответа для вывода его в gui.
 
         Args:
             query: запрос, по которому нужно найти информацию.
@@ -232,90 +302,84 @@ class My_search:
             indices_names: наименования индексов, в которых необходимо производить поиск.
             fuzziness: количество ошибок, которое можно сделать при сопоставлении слов.
             num_of_responses: количество ответов, которые нужно вывести в качестве ответа
-            на запрос.'''
-        body = {
+            на запрос.
+
+        Returns:
+            (str, list[(str, str)]): возвращает кортеж (краткий ответ, сформированный gpt;
+            поисковая выдача).'''
+        query = self.analyzer.prepare_text(query)
+        query_embedding = self.maker_embedding.encode(query).tolist()
+
+        # 1. BM25 запрос
+        bm25_query = {
             "query": {
                 "multi_match": {
-                    "query": self.analyzer.prepare_text(query),
+                    "query": query,
                     "fields": fields,
                     "fuzziness": fuzziness,
                     "type": "best_fields"
                 }
             },
-            "size": num_of_responses
+            "size": num_of_responses * 2
         }
 
-        results = self.es.search(index=indices_names, body=body)
+        # 2. kNN запрос
+        knn_query = {
+            "knn": {
+                "field": "content_embedding",
+                "query_vector": query_embedding,
+                "k": num_of_responses * 2,
+                "num_candidates": 100
+            },
+            "size": num_of_responses * 2
+        }
+
+        # 3. Выполняем оба запроса
+        bm25_results = self.es.search(index=indices_names, body=bm25_query)
+        knn_results = self.es.search(index=indices_names, body=knn_query)
+
+        # 4. Применяем RRF вручную и собираем полные документы
+        def manual_rrf(bm25_hits, knn_hits, rank_constant=20):
+            scores = {}
+            docs = {}  # Будем хранить документы здесь
+
+            # Обрабатываем BM25 результаты
+            for rank, hit in enumerate(bm25_hits, 1):
+                doc_id = hit["_id"]
+                scores[doc_id] = scores.get(doc_id, 0) + 1 / (rank + rank_constant)
+                docs[doc_id] = hit  # Сохраняем документ
+
+            # Обрабатываем kNN результаты
+            for rank, hit in enumerate(knn_hits, 1):
+                doc_id = hit["_id"]
+                scores[doc_id] = scores.get(doc_id, 0) + 1 / (rank + rank_constant)
+                if doc_id not in docs:  # Сохраняем документ, если его еще нет
+                    docs[doc_id] = hit
+
+            # Сортируем по убыванию RRF-оценки
+            sorted_ids = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+            # Возвращаем документы в нужном порядке
+            return [(docs[doc_id], score) for doc_id, score in sorted_ids]
+
+        final_results = manual_rrf(
+            bm25_results["hits"]["hits"],
+            knn_results["hits"]["hits"]
+        )[:num_of_responses]
 
         contexts = []
-        for hit in results['hits']['hits']:
+        for hit, score in final_results:
             context = ""
             try:
                 context = hit["_source"]["true_content"]
             except:
                 context = hit["_source"]["content"]
             contexts.append(context)
-
-        # print(f"Найдено документов: {results['hits']['total']['value']}")
-        print("___________________________________________________")
-        print("___________________________________________________")
-        print("Answer:")
-        print(self.__get_answer__(query=query, context_texts=contexts))
-        print("___________________________________________________")
-        for hit in results["hits"]["hits"]:
-            doc = hit["_source"]
-            print("___________________________________________________")
-            print("___________________________________________________")
-            print(f"Index: {hit['_index']}, ID: {hit['_id']}, Score: {hit['_score']}")
-            try:
-                print(f"title: {doc["true_title"]}")
-            except:
-                print(f"title: {doc["title"]}")
-            try:
-                print(f"summary: {doc["true_summary"]}")
-            except:
-                print(f"title: {doc["summary"]}")
-            try:
-                print(f"content: {doc["true_content"]}")
-            except:
-                print(f"title: {doc["content"]}")
-
-    def search_for_gui(
-        self,
-        query: str,
-        fields: list[str],
-        indices_names: list[str],
-        fuzziness: float = "AUTO",
-        num_of_responses: int = 10
-    ) -> (str, list[(str, str)]):
-        body = {
-            "query": {
-                "multi_match": {
-                    "query": self.analyzer.prepare_text(query),
-                    "fields": fields,
-                    "fuzziness": fuzziness,
-                    "type": "best_fields"
-                }
-            },
-            "size": num_of_responses
-        }
-
-        results = self.es.search(index=indices_names, body=body)
-
-        contexts = []
-        for hit in results['hits']['hits']:
-            context = ""
-            try:
-                context = hit["_source"]["true_content"]
-            except:
-                context = hit["_source"]["content"]
-            contexts.append(context)
-
 
         quick_answer = self.__get_answer__(query=query, context_texts=contexts)
         documents = []
 
-        for hit in results["hits"]["hits"]:
+        for hit, score in final_results:
             doc = hit["_source"]
             try:
                 documents.append((doc["url"], doc["true_summary"]))
@@ -323,3 +387,60 @@ class My_search:
                 documents.append((doc["url"], doc["summary"]))
 
         return quick_answer, documents
+
+    # def search_for_gui(
+    #     self,
+    #     query: str,
+    #     fields: list[str],
+    #     indices_names: list[str],
+    #     fuzziness: float = "AUTO",
+    #     num_of_responses: int = 10
+    # ) -> (str, list[(str, str)]):
+    #     '''Функция формирования ответа для вывода его в gui.
+    #
+    #     Args:
+    #         query: запрос, по которому нужно найти информацию.
+    #         fields: наименования полей, по которым нужно производить поиск.
+    #         indices_names: наименования индексов, в которых необходимо производить поиск.
+    #         fuzziness: количество ошибок, которое можно сделать при сопоставлении слов.
+    #         num_of_responses: количество ответов, которые нужно вывести в качестве ответа
+    #         на запрос.
+    #
+    #     Returns:
+    #         (str, list[(str, str)]): возвращает кортеж (краткий ответ, сформированный gpt;
+    #         поисковая выдача).'''
+    #     body = {
+    #         "query": {
+    #             "multi_match": {
+    #                 "query": self.analyzer.prepare_text(query),
+    #                 "fields": fields,
+    #                 "fuzziness": fuzziness,
+    #                 "type": "best_fields"
+    #             }
+    #         },
+    #         "size": num_of_responses
+    #     }
+    #
+    #     results = self.es.search(index=indices_names, body=body)
+    #
+    #     contexts = []
+    #     for hit in results['hits']['hits']:
+    #         context = ""
+    #         try:
+    #             context = hit["_source"]["true_content"]
+    #         except:
+    #             context = hit["_source"]["content"]
+    #         contexts.append(context)
+    #
+    #
+    #     quick_answer = self.__get_answer__(query=query, context_texts=contexts)
+    #     documents = []
+    #
+    #     for hit in results["hits"]["hits"]:
+    #         doc = hit["_source"]
+    #         try:
+    #             documents.append((doc["url"], doc["true_summary"]))
+    #         except:
+    #             documents.append((doc["url"], doc["summary"]))
+    #
+    #     return quick_answer, documents
