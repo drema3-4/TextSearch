@@ -4,7 +4,7 @@ import json
 
 folder_id = "b1gsektsm3sqcamqu30q"
 yandexgpt_api_key = ""
-yandex_gpt_api_url = ''
+yandex_gpt_api_url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 
 
 async def yandex_gpt(messages: list):

@@ -120,6 +120,16 @@ class My_search:
         true_docs = true_docs.fillna("")
         true_docs = true_docs.astype(str)
 
+        # Заменяем оставшиеся NaN значения пустой строкой
+        true_docs = true_docs.fillna("")
+        true_docs = true_docs.astype(str)
+        true_docs = true_docs.replace(['nan', 'NaN', 'null', 'None'], '',
+                                      regex=True)  # Добавляем замену строковых представлений
+
+        docs = docs.fillna("")
+        docs = docs.astype(str)
+        docs = docs.replace(['nan', 'NaN', 'null', 'None'], '', regex=True)  # Обрабатываем также основной DataFrame
+
         for row in range(docs.shape[0]):
             custom_analyzer_doc = {}
             doc = {}
@@ -128,8 +138,9 @@ class My_search:
                 custom_analyzer_doc[f"true_{column}"] = true_docs.loc[row, column]
                 doc[column] = true_docs.loc[row, column]
 
-            doc["content_embedding"] = self.maker_embedding.encode(doc["content"]).tolist()
-            custom_analyzer_doc["content_embedding"] = self.maker_embedding.encode(custom_analyzer_doc["content"]).tolist()
+
+            doc["content_embedding"] = self.maker_embedding.encode(doc["content"] if type(doc["content"]) == str else "").tolist()
+            custom_analyzer_doc["content_embedding"] = self.maker_embedding.encode(custom_analyzer_doc["content"] if type(custom_analyzer_doc["content"]) == str else "").tolist()
 
             for index_name in indices_names:
                 if re.search("standart", index_name):
