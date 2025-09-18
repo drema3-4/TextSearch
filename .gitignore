@@ -1,0 +1,35 @@
+# JetBrains IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Elasticsearch (если есть данные индексов)
+data/
+
+# Логи
+*.log
+
+# Файлы настроек
+*.cfg
+*.conf
+
+# Временные файлы
+*.tmp
+*.temp
+
+# Операционные системы
+.DS_Store
+Thumbs.db

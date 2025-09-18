@@ -2,9 +2,9 @@ import aiohttp
 import asyncio
 import json
 
-folder_id = "b1gsektsm3sqcamqu30q"
-yandexgpt_api_key = ""
-yandex_gpt_api_url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
+folder_id = "<ваше значение>"
+yandexgpt_api_key = "<ваше значение>"
+yandex_gpt_api_url = "<ваше значение>"
 
 
 async def yandex_gpt(messages: list):
