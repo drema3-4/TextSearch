@@ -6,7 +6,7 @@
 
 **Пример работы приложения:**
 
-[https://github.com/drema3-4/TextSearch/screenshots/primer.png](https://github.com/drema3-4/TextSearch/blob/main/screenshots/primer.png)
+![[screenshots/primer.png]]
 
 ## Используемые технологии
 
